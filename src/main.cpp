@@ -124,6 +124,7 @@ void DrawModelBunny();
 void DrawModelFloor();
 void DrawModelTable();
 void DrawModelCarrot();
+void endGameScene();
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -280,10 +281,10 @@ int main(int argc, char *argv[])
     LoadShadersFromFiles();
 
     // Carregamos duas imagens para serem utilizadas como textura
-    LoadTextureImage("../../data/bunny.jpg");      // TextureImage0
-    LoadTextureImage("../../data/grama.jpg");                        // TextureImage1
-    LoadTextureImage("../../data/table.jpg");                        // TextureImage2
-    LoadTextureImage("../../data/carrot.jpg");                        // TextureImage3
+    LoadTextureImage("../../data/bunny.jpg");  // TextureImage0
+    LoadTextureImage("../../data/grama.jpg");  // TextureImage1
+    LoadTextureImage("../../data/table.jpg");  // TextureImage2
+    LoadTextureImage("../../data/carrot.jpg"); // TextureImage3
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     // ObjModel spheremodel("../../data/sphere.obj");
@@ -417,10 +418,7 @@ int main(int argc, char *argv[])
         // glUniform1i(object_id_uniform, SPHERE);
         // DrawVirtualObject("sphere");
 
-        DrawModelBunny();
-        DrawModelFloor();
-        DrawModelTable();
-        DrawModelCarrot();
+        endGameScene();
 
         // Pegamos um vértice com coordenadas de modelo (0.5, 0.5, 0.5, 1) e o
         // passamos por todos os sistemas de coordenadas armazenados nas
@@ -462,6 +460,14 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+void endGameScene()
+{
+    DrawModelBunny();
+    DrawModelFloor();
+    DrawModelTable();
+    DrawModelCarrot();
+}
+
 void DrawModelBunny()
 {
     glm::mat4 model = Matrix_Identity();
@@ -497,12 +503,11 @@ void DrawModelCarrot()
 {
     glm::mat4 model = Matrix_Identity();
     // model = Matrix_Translate(1.0f, 0.0f, 0.0f) * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f); com rotate
-    model = Matrix_Translate(2.0f, -0.5f, -2.0f) * Matrix_Rotate_Y(M_PI_2 + (float)glfwGetTime() * 0.5f) * Matrix_Rotate_X(-M_PI_2/1.5) * Matrix_Scale(0.01f, 0.01f, 0.01f);
+    model = Matrix_Translate(2.0f, -0.5f, -2.0f) * Matrix_Rotate_Y(M_PI_2 + (float)glfwGetTime() * 0.5f) * Matrix_Rotate_X(-M_PI_2 / 1.5) * Matrix_Scale(0.01f, 0.01f, 0.01f);
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(object_id_uniform, CARROT);
     DrawVirtualObject("carrot");
 }
-
 
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char *filename)
