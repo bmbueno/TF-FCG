@@ -23,6 +23,11 @@ uniform mat4 projection;
 #define FLOOR 1
 #define TABLE 2
 #define CARROT 3
+
+// Constantes
+#define M_PI   3.14159265358979323846
+#define M_PI_2 1.57079632679489661923
+
 // #define PLANE  2
 uniform int object_id;
 
