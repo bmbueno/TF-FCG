@@ -90,6 +90,7 @@ struct ObjModel
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4 &M);
+void detectaColisao();
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
@@ -136,6 +137,7 @@ void DrawModelBunny();
 void DrawModelFloor();
 void DrawModelTable();
 void DrawModelCarrot();
+
 void endGameScene();
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
@@ -486,6 +488,8 @@ void endGameScene()
     DrawModelFloor();
     DrawModelTable();
     DrawModelCarrot();
+    detectaColisao();
+
 }
 
 
@@ -525,6 +529,84 @@ void DrawModelBunny()
 
 }
 
+bool drawCarrot = true;
+void DrawModelCarrot()
+{
+    glm::mat4 model = Matrix_Identity();
+    // model = Matrix_Translate(1.0f, 0.0f, 0.0f) * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f); com rotate
+    model = Matrix_Translate(2.0f, -0.5f, -2.0f)  * Matrix_Scale(0.01f, 0.01f, 0.01f);
+    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(object_id_uniform, CARROT);
+    if(drawCarrot)
+        DrawVirtualObject("carrot");
+}
+
+
+
+void detectaColisao( ){
+
+    /*
+printf("carrot %0.2f\n", carrotBox.x_max + 2);
+2
+printf("bunny %0.2f\n\n", bunnyBox.x_min + deslocamento_x);
+-1
+*/
+    glm::vec3 carrot_bbox_min = g_VirtualScene["carrot"].bbox_min;
+    glm::vec3 carrot_bbox_max = g_VirtualScene["carrot"].bbox_max;
+
+    glm::vec3 bunny_bbox_min = g_VirtualScene["bunny"].bbox_min;
+    glm::vec3 bunny_bbox_max = g_VirtualScene["bunny"].bbox_max;
+
+    float carrotXMax = (carrot_bbox_max.x * 0.01f) + 2.0f;
+    float carrotXMin = (carrot_bbox_min.x * 0.01f) + 2.0f;
+    float bunnyXMax  = bunny_bbox_max.x  + deslocamento_x;
+    float bunnyXMin  = bunny_bbox_min.x  + deslocamento_x;
+    printf("\ncenoura min %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
+    printf("coelho min %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
+
+
+
+    float carrotZMax = (carrot_bbox_max.z * 0.01f) -2.0f;
+    float carrotZMin = (carrot_bbox_min.z * 0.01f) -2.0f;
+    float bunnyZMax  = bunny_bbox_max.z + deslocamento_z;
+    float bunnyZMin  = bunny_bbox_min.z + deslocamento_z;
+
+    bool colisaox = false;
+    bool colisaoz = false;
+    if((bunnyXMin < carrotXMax && bunnyXMax > carrotXMax) ||
+       (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin))
+    {  colisaox = true;
+        printf("X COLISION\n\n");
+    }
+    if((bunnyZMin < carrotZMax && bunnyZMax > carrotZMax) ||
+       (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin))
+    {  colisaoz = true;
+    printf("Z COLISION\n\n");
+    }
+
+
+    if(colisaox && colisaoz){
+         drawCarrot = false;
+            printf("comeu a cenoura\n");
+    }
+
+
+
+/*   printf("\n");
+    printf("\n------------------------------------------------\n");
+    bbox bunnyBox = getBBox("bunny");
+    bbox carrotBox = getBBox("carrot");
+
+
+    printf("%0.2f, %0.2f", g_VirtualScene["carrot"].bbox_min.x * 0.01f, g_VirtualScene["carrot"].bbox_max.x *0.01f);
+
+    printf("\n------------------------------------------------\n");
+
+*/
+
+}
+
+
 void DrawModelFloor()
 {
     glm::mat4 model = Matrix_Identity();
@@ -545,25 +627,6 @@ void DrawModelTable()
     DrawVirtualObject("table");
 }
 
-void DrawModelCarrot()
-{
-    glm::mat4 model = Matrix_Identity();
-    // model = Matrix_Translate(1.0f, 0.0f, 0.0f) * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f); com rotate
-    model = Matrix_Translate(2.0f, -0.5f, -2.0f)  * Matrix_Scale(0.01f, 0.01f, 0.01f);
-    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(object_id_uniform, CARROT);
-    DrawVirtualObject("carrot");
-
-      printf("\n");
-    printf("\n------------------------------------------------\n");
-    bbox boundingBox = getBBox("bunny");
-
-    printf("%0.2f, %0.2f", g_VirtualScene["carrot"].bbox_min.x * 0.01f, g_VirtualScene["carrot"].bbox_max.x *0.01f);
-
-    printf("\n------------------------------------------------\n");
-
-
-}
 
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char *filename)
