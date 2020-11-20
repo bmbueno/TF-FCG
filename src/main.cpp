@@ -515,6 +515,7 @@ void DrawModelBunny()
 void DrawModelCarrot()
 {
     std::list<objectCoordinates>::iterator carrot;
+  //  printf("desenhando\n");
     for (carrot = carrots.begin(); carrot != carrots.end(); carrot++)
     {
         glm::mat4 model = Matrix_Identity();
@@ -527,7 +528,7 @@ void DrawModelCarrot()
 
 void detectaColisao(const char *object_name)
 {
-
+   // printf("removendo\n");
     glm::vec3 object_bbox_min = g_VirtualScene[object_name].bbox_min;
     glm::vec3 object_bbox_max = g_VirtualScene[object_name].bbox_max;
 
@@ -554,11 +555,11 @@ void detectaColisao(const char *object_name)
         carrotZMax = (object_bbox_max.z * 0.01f) + (*carrot).z;
         carrotZMin = (object_bbox_min.z * 0.01f) + (*carrot).z;
 
-        printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
-        printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
+       // printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
+      //  printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
 
-        printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
-        printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
+     //   printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
+     //   printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
 
         bool colisaox = false;
         bool colisaoz = false;
@@ -567,7 +568,7 @@ void detectaColisao(const char *object_name)
             (bunnyXMin > carrotXMin && bunnyXMin < carrotXMax))
         {
             colisaox = true;
-            printf("X COLISION\n\n");
+//printf("X COLISION\n\n");
         }
         if (carrotXMin < bunnyXMax)
 
@@ -576,14 +577,14 @@ void detectaColisao(const char *object_name)
                 (bunnyZMin > carrotZMin && bunnyZMin < carrotZMax))
             {
                 colisaoz = true;
-                printf("Z COLISION\n\n");
+              ///  printf("Z COLISION\n\n");
             }
 
         if (colisaox && colisaoz)
         {
-            printf("comeu a cenoura\n");
-            carrots.erase(carrot);
 
+            carrots.erase(carrot);
+            printf("comeu a cenoura\n");
         }
     }
 
