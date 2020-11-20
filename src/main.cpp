@@ -561,9 +561,6 @@ printf("bunny %0.2f\n\n", bunnyBox.x_min + deslocamento_x);
     float carrotXMin = (carrot_bbox_min.x * 0.01f) + 2.0f;
     float bunnyXMax  = bunny_bbox_max.x  + deslocamento_x;
     float bunnyXMin  = bunny_bbox_min.x  + deslocamento_x;
-    printf("\ncenoura min %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
-    printf("coelho min %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
-
 
 
     float carrotZMax = (carrot_bbox_max.z * 0.01f) -2.0f;
@@ -571,15 +568,30 @@ printf("bunny %0.2f\n\n", bunnyBox.x_min + deslocamento_x);
     float bunnyZMax  = bunny_bbox_max.z + deslocamento_z;
     float bunnyZMin  = bunny_bbox_min.z + deslocamento_z;
 
+
+
+    printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
+    printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
+
+    printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
+    printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
+
+
+
+
     bool colisaox = false;
     bool colisaoz = false;
     if((bunnyXMin < carrotXMax && bunnyXMax > carrotXMax) ||
-       (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin))
+       (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin) ||
+       (bunnyXMin > carrotXMin && bunnyXMin < carrotXMax))
     {  colisaox = true;
         printf("X COLISION\n\n");
     }
+    if(carrotXMin < bunnyXMax)
+
     if((bunnyZMin < carrotZMax && bunnyZMax > carrotZMax) ||
-       (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin))
+       (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin) ||
+       (bunnyZMin > carrotZMin && bunnyZMin < carrotZMax))
     {  colisaoz = true;
     printf("Z COLISION\n\n");
     }
