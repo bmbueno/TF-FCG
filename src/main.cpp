@@ -526,7 +526,7 @@ void endGameScene()
 void DrawModelBunny()
 {
     glm::mat4 model = Matrix_Identity();
-    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(M_PI / -2);
+    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(cos(g_CameraTheta));
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(object_id_uniform, BUNNY);
     DrawVirtualObject("bunny");
@@ -545,6 +545,32 @@ void DrawModelCarrot()
         DrawVirtualObject("carrot");
     }
 }
+
+
+bool isMovimentoValido(float deslocamentoX, float deslocamentoZ){
+    glm::vec3 floor_bbox_min = g_VirtualScene["floor"].bbox_min;
+    glm::vec3 floor_bbox_max = g_VirtualScene["floor"].bbox_max;
+
+    glm::vec3 bunny_bbox_min = g_VirtualScene["bunny"].bbox_min;
+    glm::vec3 bunny_bbox_max = g_VirtualScene["bunny"].bbox_max;
+
+    float bunnyXMax = bunny_bbox_max.x + deslocamento_x + deslocamentoX;
+    float bunnyXMin = bunny_bbox_min.x + deslocamento_x + deslocamentoX;
+    float bunnyZMax = bunny_bbox_max.z + deslocamento_z + deslocamentoZ;
+    float bunnyZMin = bunny_bbox_min.z + deslocamento_z + deslocamentoZ;
+
+    float floorXMax = (floor_bbox_max.x * 40.0f) ;
+    float floorXMin = (floor_bbox_min.x * 40.0f) ;
+    float floorZMax = (floor_bbox_max.z * 40.0f) ;
+    float floorZMin = (floor_bbox_min.z * 40.0f) ;
+
+    if ((bunnyXMin < floorXMin) || (bunnyXMax > floorZMax)){
+        return false;}
+    if((bunnyZMin < floorZMin)  || (bunnyZMax > floorZMax)){
+        return false;}
+    return true;
+}
+
 
 void detectaColisao(const char *object_name)
 {
@@ -1236,8 +1262,7 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
     // parâmetros que definem a posição da câmera dentro da cena virtual.
     // Assim, temos que o usuário consegue controlar a câmera.
 
-    if (g_LeftMouseButtonPressed)
-    {
+
         // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
         float dx = xpos - g_LastCursorPosX;
         float dy = ypos - g_LastCursorPosY;
@@ -1260,39 +1285,8 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
         g_LastCursorPosY = ypos;
-    }
 
-    if (g_RightMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
 
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_ForearmAngleZ -= 0.01f * dx;
-        g_ForearmAngleX += 0.01f * dy;
-
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
-
-    if (g_MiddleMouseButtonPressed)
-    {
-        // Deslocamento do cursor do mouse em x e y de coordenadas de tela!
-        float dx = xpos - g_LastCursorPosX;
-        float dy = ypos - g_LastCursorPosY;
-
-        // Atualizamos parâmetros da antebraço com os deslocamentos
-        g_TorsoPositionX += 0.01f * dx;
-        g_TorsoPositionY -= 0.01f * dy;
-
-        // Atualizamos as variáveis globais para armazenar a posição atual do
-        // cursor como sendo a última posição conhecida do cursor.
-        g_LastCursorPosX = xpos;
-        g_LastCursorPosY = ypos;
-    }
 }
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
@@ -1336,19 +1330,23 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
 
     if (key == GLFW_KEY_W || w_state == GLFW_PRESS)
     {
-        deslocamento_z -= 0.1;
+        if(isMovimentoValido(0, -0.1f))
+            deslocamento_z -= 0.1;
     }
     if (key == GLFW_KEY_S || s_state == GLFW_PRESS)
     {
-        deslocamento_z += 0.1;
+        if(isMovimentoValido(0, 0.1f))
+            deslocamento_z += 0.1;
     }
     if (key == GLFW_KEY_A || a_state == GLFW_PRESS)
     {
-        deslocamento_x -= 0.1;
+        if(isMovimentoValido(-0.1f,0 ))
+            deslocamento_x -= 0.1;
     }
     if (key == GLFW_KEY_D || d_state == GLFW_PRESS)
     {
-        deslocamento_x += 0.1;
+        if(isMovimentoValido(0.1f, 0))
+            deslocamento_x += 0.1;
     }
 }
 
