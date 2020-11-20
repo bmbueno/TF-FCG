@@ -143,6 +143,8 @@ void DrawModelBunny();
 void DrawModelFloor();
 void DrawModelTable();
 void DrawModelCarrot();
+void DrawModelCow();
+
 void DrawAllCarrots(int num);
 std::list<objectCoordinates> carrots;
 bool detectaUmaColisao(objectCoordinates object1, objectCoordinates object2, const char *object1_name, const char *object2_name);
@@ -230,6 +232,7 @@ GLuint g_NumLoadedTextures = 0;
 #define FLOOR 1
 #define TABLE 2
 #define CARROT 3
+#define COW 4
 // #define PLANE 1
 struct bbox
 {
@@ -355,9 +358,9 @@ int main(int argc, char *argv[])
     ComputeNormals(&floormodel);
     BuildTrianglesAndAddToVirtualScene(&floormodel);
 
-    // ObjModel tablemodel("../../data/table.obj");
-    // ComputeNormals(&tablemodel);
-    // BuildTrianglesAndAddToVirtualScene(&tablemodel);
+    ObjModel cowmodel("../../data/cow.obj");
+    ComputeNormals(&cowmodel);
+    BuildTrianglesAndAddToVirtualScene(&cowmodel);
 
     ObjModel carrotmodel("../../data/carrot.obj");
     ComputeNormals(&carrotmodel);
@@ -530,6 +533,7 @@ void endGameScene()
     DrawModelFloor();
     DrawModelTable();
     DrawModelCarrot();
+    DrawModelCow();
     // carrots.push_back(DrawModelCarrot(1.0f, -0.5f, -2.0f));
 
     detectaColisao("carrot");
@@ -670,6 +674,15 @@ void DrawModelTable()
     DrawVirtualObject("table");
 }
 
+
+void DrawModelCow()
+{
+    glm::mat4 model = Matrix_Identity();
+    model = Matrix_Translate(1.0f, 0.1f, -3.0f) * Matrix_Scale(2.0f, 2.0f, 2.0f);
+    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+    glUniform1i(object_id_uniform, COW);
+    DrawVirtualObject("cow");
+}
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char *filename)
 {
