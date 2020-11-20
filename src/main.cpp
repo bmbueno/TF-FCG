@@ -139,8 +139,9 @@ void DrawModelBunny();
 void DrawModelFloor();
 void DrawModelTable();
 void DrawModelCarrot();
+void DrawAllCarrots(int num);
 std::list<objectCoordinates> carrots;
-
+bool detectaUmaColisao(objectCoordinates object1, objectCoordinates object2, const char *object1_name, const char *object2_name);
 void endGameScene();
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
@@ -249,6 +250,8 @@ int main(int argc, char *argv[])
 
     carrots.push_back(carrot1);
     carrots.push_back(carrot2);
+
+    DrawAllCarrots(20);
 
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
     // sistema operacional, onde poderemos renderizar com OpenGL.
@@ -491,6 +494,23 @@ int main(int argc, char *argv[])
     return 0;
 }
 
+void DrawAllCarrots(int num)
+{
+    for (int i = 0; i < num; i++)
+    {
+        objectCoordinates carrot;
+        carrot.x = 1.0f * (rand() % 40);
+        carrot.y = -0.5f;
+        carrot.z = 1.0f * (rand() % 40);
+
+        carrots.push_back(carrot);
+    }
+}
+
+bool hasCarrotHere(float x, float z)
+{
+}
+
 void endGameScene()
 {
 
@@ -515,7 +535,7 @@ void DrawModelBunny()
 void DrawModelCarrot()
 {
     std::list<objectCoordinates>::iterator carrot;
-  //  printf("desenhando\n");
+    //  printf("desenhando\n");
     for (carrot = carrots.begin(); carrot != carrots.end(); carrot++)
     {
         glm::mat4 model = Matrix_Identity();
@@ -528,64 +548,69 @@ void DrawModelCarrot()
 
 void detectaColisao(const char *object_name)
 {
-   // printf("removendo\n");
-    glm::vec3 object_bbox_min = g_VirtualScene[object_name].bbox_min;
-    glm::vec3 object_bbox_max = g_VirtualScene[object_name].bbox_max;
+    // printf("removendo\n");
+    objectCoordinates bunny;
 
-    glm::vec3 bunny_bbox_min = g_VirtualScene["bunny"].bbox_min;
-    glm::vec3 bunny_bbox_max = g_VirtualScene["bunny"].bbox_max;
-
-    float bunnyXMax = bunny_bbox_max.x + deslocamento_x;
-    float bunnyXMin = bunny_bbox_min.x + deslocamento_x;
-
-    float bunnyZMax = bunny_bbox_max.z + deslocamento_z;
-    float bunnyZMin = bunny_bbox_min.z + deslocamento_z;
-
-    float carrotXMax;
-    float carrotXMin;
-    float carrotZMax;
-    float carrotZMin;
+    bunny.x = deslocamento_x;
+    bunny.y = 0.0f;
+    bunny.z = deslocamento_z;
 
     std::list<objectCoordinates>::iterator carrot;
     for (carrot = carrots.begin(); carrot != carrots.end(); carrot++)
     {
-        carrotXMax = (object_bbox_max.x * 0.01f) + (*carrot).x;
-        carrotXMin = (object_bbox_min.x * 0.01f) + (*carrot).x;
 
-        carrotZMax = (object_bbox_max.z * 0.01f) + (*carrot).z;
-        carrotZMin = (object_bbox_min.z * 0.01f) + (*carrot).z;
-
-       // printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
-      //  printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
-
-     //   printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
-     //   printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
-
-        bool colisaox = false;
-        bool colisaoz = false;
-        if ((bunnyXMin < carrotXMax && bunnyXMax > carrotXMax) ||
-            (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin) ||
-            (bunnyXMin > carrotXMin && bunnyXMin < carrotXMax))
-        {
-            colisaox = true;
-//printf("X COLISION\n\n");
-        }
-        if (carrotXMin < bunnyXMax)
-
-            if ((bunnyZMin < carrotZMax && bunnyZMax > carrotZMax) ||
-                (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin) ||
-                (bunnyZMin > carrotZMin && bunnyZMin < carrotZMax))
-            {
-                colisaoz = true;
-              ///  printf("Z COLISION\n\n");
-            }
-
-        if (colisaox && colisaoz)
+        if (detectaUmaColisao((*carrot), bunny, object_name, "bunny"))
         {
             carrots.erase(carrot);
             break;
         }
     }
+}
+
+bool detectaUmaColisao(objectCoordinates object1, objectCoordinates object2, const char *object1_name, const char *object2_name)
+{
+    glm::vec3 object1_bbox_min = g_VirtualScene[object1_name].bbox_min;
+    glm::vec3 object1_bbox_max = g_VirtualScene[object1_name].bbox_max;
+
+    glm::vec3 object2_bbox_min = g_VirtualScene[object2_name].bbox_min;
+    glm::vec3 object2_bbox_max = g_VirtualScene[object2_name].bbox_max;
+
+    float object2XMax = object2_bbox_max.x + object2.x;
+    float object2XMin = object2_bbox_min.x + object2.x;
+    float object2ZMax = object2_bbox_max.z + object2.z;
+    float object2ZMin = object2_bbox_min.z + object2.z;
+
+
+    float object1XMax  = (object1_bbox_max.x * 0.01f) + object1.x;
+    float object1XMin  = (object1_bbox_min.x * 0.01f) + object1.x;
+    float object1ZMax  = (object1_bbox_max.z * 0.01f) + object1.z;
+    float object1ZMin  = (object1_bbox_min.z * 0.01f) + object1.z;
+
+
+    bool colisaox = false;
+    bool colisaoz = false;
+    if ((object2XMin < object1XMax && object2XMax > object1XMax) ||
+        (object2XMin < object1XMin && object2XMax > object1XMin) ||
+        (object2XMin > object1XMin && object2XMin < object1XMax))
+    {
+        colisaox = true;
+        //printf("X COLISION\n\n");
+    }
+    if (object1XMin < object2XMax)
+
+        if ((object2ZMin < object1ZMax && object2ZMax > object1ZMax) ||
+            (object2ZMin < object1ZMin && object2ZMax > object1ZMin) ||
+            (object2ZMin > object1ZMin && object2ZMin < object1ZMax))
+        {
+            colisaoz = true;
+            ///  printf("Z COLISION\n\n");
+        }
+
+    if (colisaox && colisaoz)
+    {
+        return true;
+    } else 
+        return false;
 }
 
 void DrawModelFloor()
