@@ -29,6 +29,7 @@
 #include <sstream>
 #include <stdexcept>
 #include <algorithm>
+#include <list>
 
 // Headers das bibliotecas OpenGL
 #include <glad/glad.h>  // Criação de contexto OpenGL 3.3
@@ -48,15 +49,11 @@
 #include "utils.h"
 #include "matrices.h"
 
-
-
-#define M_PI   3.14159265358979323846
+#define M_PI 3.14159265358979323846
 #define M_PI_2 1.57079632679489661923
-
 
 float deslocamento_x = 0.0f;
 float deslocamento_z = 0.0f;
-
 
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
@@ -85,12 +82,17 @@ struct ObjModel
     }
 };
 
-
+struct objectCoordinates
+{
+    float x;
+    float y;
+    float z;
+};
 
 // Declaração de funções utilizadas para pilha de matrizes de modelagem.
 void PushMatrix(glm::mat4 M);
 void PopMatrix(glm::mat4 &M);
-void detectaColisao();
+void detectaColisao(const char *object_name);
 
 // Declaração de várias funções utilizadas em main().  Essas estão definidas
 // logo após a definição de main() neste arquivo.
@@ -137,6 +139,7 @@ void DrawModelBunny();
 void DrawModelFloor();
 void DrawModelTable();
 void DrawModelCarrot();
+std::list<objectCoordinates> carrots;
 
 void endGameScene();
 
@@ -220,7 +223,8 @@ GLuint g_NumLoadedTextures = 0;
 #define TABLE 2
 #define CARROT 3
 // #define PLANE 1
-struct bbox{
+struct bbox
+{
     float x_max;
     float x_min;
 
@@ -231,11 +235,21 @@ struct bbox{
     float z_min;
 };
 
-
-
-
 int main(int argc, char *argv[])
 {
+    objectCoordinates carrot1;
+    carrot1.x = 2.0f;
+    carrot1.y = -0.5f;
+    carrot1.z = -2.0f;
+
+    objectCoordinates carrot2;
+    carrot2.x = 10.0f;
+    carrot2.y = -0.5f;
+    carrot2.z = -2.0f;
+
+    carrots.push_back(carrot1);
+    carrots.push_back(carrot2);
+
     // Inicializamos a biblioteca GLFW, utilizada para criar uma janela do
     // sistema operacional, onde poderemos renderizar com OpenGL.
     int success = glfwInit();
@@ -309,10 +323,10 @@ int main(int argc, char *argv[])
 
     // Carregamos duas imagens para serem utilizadas como textura
     LoadTextureImage("../../data/bunny.jpg");  // TextureImage0
-   LoadTextureImage("../../data/grama.jpg");  // TextureImage1
-   LoadTextureImage("../../data/carrot.jpg"); // TextureImage3
-   LoadTextureImage("../../data/table.jpg");  // TextureImage2
-   LoadTextureImage("../../data/table.jpg");  // TextureImage2
+    LoadTextureImage("../../data/grama.jpg");  // TextureImage1
+    LoadTextureImage("../../data/carrot.jpg"); // TextureImage3
+    LoadTextureImage("../../data/table.jpg");  // TextureImage2
+    LoadTextureImage("../../data/table.jpg");  // TextureImage2
 
     // Construímos a representação de objetos geométricos através de malhas de triângulos
     // ObjModel spheremodel("../../data/sphere.obj");
@@ -331,9 +345,9 @@ int main(int argc, char *argv[])
     ComputeNormals(&floormodel);
     BuildTrianglesAndAddToVirtualScene(&floormodel);
 
-   // ObjModel tablemodel("../../data/table.obj");
-   // ComputeNormals(&tablemodel);
-   // BuildTrianglesAndAddToVirtualScene(&tablemodel);
+    // ObjModel tablemodel("../../data/table.obj");
+    // ComputeNormals(&tablemodel);
+    // BuildTrianglesAndAddToVirtualScene(&tablemodel);
 
     ObjModel carrotmodel("../../data/carrot.obj");
     ComputeNormals(&carrotmodel);
@@ -399,12 +413,9 @@ int main(int argc, char *argv[])
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);     // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
-
-
-
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
-        glm::mat4 view =   Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector) *Matrix_Translate(-deslocamento_x,0 ,-deslocamento_z) ;
+        glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector) * Matrix_Translate(-deslocamento_x, 0, -deslocamento_z);
 
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
@@ -458,8 +469,6 @@ int main(int argc, char *argv[])
         //glm::vec4 p_model(0.5f, 0.5f, 0.5f, 1.0f);
         //TextRendering_ShowModelViewProjection(window, projection, view, model, p_model);
 
-
-
         // O framebuffer onde OpenGL executa as operações de renderização não
         // é o mesmo que está sendo mostrado para o usuário, caso contrário
         // seria possível ver artefatos conhecidos como "screen tearing". A
@@ -484,127 +493,101 @@ int main(int argc, char *argv[])
 
 void endGameScene()
 {
+
     DrawModelBunny();
     DrawModelFloor();
     DrawModelTable();
     DrawModelCarrot();
-    detectaColisao();
+    // carrots.push_back(DrawModelCarrot(1.0f, -0.5f, -2.0f));
 
+    detectaColisao("carrot");
 }
-
-
-bbox getBBox(const char *object_name)
-{
-
-    // Setamos as variáveis "bbox_min" e "bbox_max" do fragment shader
-    // com os parâmetros da axis-aligned bounding box (AABB) do modelo.
-    glm::vec3 bbox_min = g_VirtualScene[object_name].bbox_min;
-    glm::vec3 bbox_max = g_VirtualScene[object_name].bbox_max;
-
-    bbox boundingBox;
-    boundingBox.x_max = bbox_max.x;
-    boundingBox.x_min = bbox_min.x;
-
-    boundingBox.y_max = bbox_max.y;
-    boundingBox.y_min = bbox_min.y;
-
-    boundingBox.z_max = bbox_max.z;
-    boundingBox.z_min = bbox_min.z;
-
-}
-
-
-
-
 
 void DrawModelBunny()
 {
     glm::mat4 model = Matrix_Identity();
-    // Desenhamos o modelo do coelho
-    // model = Matrix_Translate(1.0f, 0.0f, 0.0f) * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f); com rotate
-    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(M_PI/-2);
+    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(M_PI / -2);
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(object_id_uniform, BUNNY);
     DrawVirtualObject("bunny");
-
 }
 
-bool drawCarrot = true;
 void DrawModelCarrot()
 {
-    glm::mat4 model = Matrix_Identity();
-    // model = Matrix_Translate(1.0f, 0.0f, 0.0f) * Matrix_Rotate_X(g_AngleX + (float)glfwGetTime() * 0.1f); com rotate
-    model = Matrix_Translate(2.0f, -0.5f, -2.0f)  * Matrix_Scale(0.01f, 0.01f, 0.01f);
-    glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
-    glUniform1i(object_id_uniform, CARROT);
-    if(drawCarrot)
+    std::list<objectCoordinates>::iterator carrot;
+    for (carrot = carrots.begin(); carrot != carrots.end(); carrot++)
+    {
+        glm::mat4 model = Matrix_Identity();
+        model = Matrix_Translate((*carrot).x, (*carrot).y, (*carrot).z) * Matrix_Scale(0.01f, 0.01f, 0.01f);
+        glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
+        glUniform1i(object_id_uniform, CARROT);
         DrawVirtualObject("carrot");
+    }
 }
 
+void detectaColisao(const char *object_name)
+{
 
-
-void detectaColisao( ){
-
-    /*
-printf("carrot %0.2f\n", carrotBox.x_max + 2);
-2
-printf("bunny %0.2f\n\n", bunnyBox.x_min + deslocamento_x);
--1
-*/
-    glm::vec3 carrot_bbox_min = g_VirtualScene["carrot"].bbox_min;
-    glm::vec3 carrot_bbox_max = g_VirtualScene["carrot"].bbox_max;
+    glm::vec3 object_bbox_min = g_VirtualScene[object_name].bbox_min;
+    glm::vec3 object_bbox_max = g_VirtualScene[object_name].bbox_max;
 
     glm::vec3 bunny_bbox_min = g_VirtualScene["bunny"].bbox_min;
     glm::vec3 bunny_bbox_max = g_VirtualScene["bunny"].bbox_max;
 
-    float carrotXMax = (carrot_bbox_max.x * 0.01f) + 2.0f;
-    float carrotXMin = (carrot_bbox_min.x * 0.01f) + 2.0f;
-    float bunnyXMax  = bunny_bbox_max.x  + deslocamento_x;
-    float bunnyXMin  = bunny_bbox_min.x  + deslocamento_x;
+    float bunnyXMax = bunny_bbox_max.x + deslocamento_x;
+    float bunnyXMin = bunny_bbox_min.x + deslocamento_x;
 
+    float bunnyZMax = bunny_bbox_max.z + deslocamento_z;
+    float bunnyZMin = bunny_bbox_min.z + deslocamento_z;
 
-    float carrotZMax = (carrot_bbox_max.z * 0.01f) -2.0f;
-    float carrotZMin = (carrot_bbox_min.z * 0.01f) -2.0f;
-    float bunnyZMax  = bunny_bbox_max.z + deslocamento_z;
-    float bunnyZMin  = bunny_bbox_min.z + deslocamento_z;
+    float carrotXMax;
+    float carrotXMin;
+    float carrotZMax;
+    float carrotZMin;
 
+    std::list<objectCoordinates>::iterator carrot;
+    for (carrot = carrots.begin(); carrot != carrots.end(); carrot++)
+    {
+        carrotXMax = (object_bbox_max.x * 0.01f) + (*carrot).x;
+        carrotXMin = (object_bbox_min.x * 0.01f) + (*carrot).x;
 
+        carrotZMax = (object_bbox_max.z * 0.01f) + (*carrot).z;
+        carrotZMin = (object_bbox_min.z * 0.01f) + (*carrot).z;
 
-    printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
-    printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
+        printf("\ncenoura xmin %0.2f, max %0.2f\n", carrotXMin, carrotXMax);
+        printf("coelho xmin %0.2f, max %0.2f\n", bunnyXMin, bunnyXMax);
 
-    printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
-    printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
+        printf("\ncenoura zmin %0.2f, zmax %0.2f\n", carrotZMin, carrotZMax);
+        printf("coelho zmin %0.2f, zmax %0.2f\n", bunnyZMin, bunnyZMax);
 
+        bool colisaox = false;
+        bool colisaoz = false;
+        if ((bunnyXMin < carrotXMax && bunnyXMax > carrotXMax) ||
+            (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin) ||
+            (bunnyXMin > carrotXMin && bunnyXMin < carrotXMax))
+        {
+            colisaox = true;
+            printf("X COLISION\n\n");
+        }
+        if (carrotXMin < bunnyXMax)
 
+            if ((bunnyZMin < carrotZMax && bunnyZMax > carrotZMax) ||
+                (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin) ||
+                (bunnyZMin > carrotZMin && bunnyZMin < carrotZMax))
+            {
+                colisaoz = true;
+                printf("Z COLISION\n\n");
+            }
 
-
-    bool colisaox = false;
-    bool colisaoz = false;
-    if((bunnyXMin < carrotXMax && bunnyXMax > carrotXMax) ||
-       (bunnyXMin < carrotXMin && bunnyXMax > carrotXMin) ||
-       (bunnyXMin > carrotXMin && bunnyXMin < carrotXMax))
-    {  colisaox = true;
-        printf("X COLISION\n\n");
-    }
-    if(carrotXMin < bunnyXMax)
-
-    if((bunnyZMin < carrotZMax && bunnyZMax > carrotZMax) ||
-       (bunnyZMin < carrotZMin && bunnyZMax > carrotZMin) ||
-       (bunnyZMin > carrotZMin && bunnyZMin < carrotZMax))
-    {  colisaoz = true;
-    printf("Z COLISION\n\n");
-    }
-
-
-    if(colisaox && colisaoz){
-         drawCarrot = false;
+        if (colisaox && colisaoz)
+        {
             printf("comeu a cenoura\n");
+            carrots.erase(carrot);
+
+        }
     }
 
-
-
-/*   printf("\n");
+    /*   printf("\n");
     printf("\n------------------------------------------------\n");
     bbox bunnyBox = getBBox("bunny");
     bbox carrotBox = getBBox("carrot");
@@ -615,9 +598,7 @@ printf("bunny %0.2f\n\n", bunnyBox.x_min + deslocamento_x);
     printf("\n------------------------------------------------\n");
 
 */
-
 }
-
 
 void DrawModelFloor()
 {
@@ -638,7 +619,6 @@ void DrawModelTable()
     glUniform1i(object_id_uniform, TABLE);
     DrawVirtualObject("table");
 }
-
 
 // Função que carrega uma imagem para ser utilizada como textura
 void LoadTextureImage(const char *filename)
@@ -1335,9 +1315,6 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
         fflush(stdout);
     }
 
-
-
-
     //movimentacao camera e coelho
     int w_state = glfwGetKey(window, GLFW_KEY_W);
     int s_state = glfwGetKey(window, GLFW_KEY_S);
@@ -1360,8 +1337,6 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     {
         deslocamento_x += 0.1;
     }
-
-
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
@@ -1369,5 +1344,3 @@ void ErrorCallback(int error, const char *description)
 {
     fprintf(stderr, "ERROR: GLFW: %s\n", description);
 }
-
-
