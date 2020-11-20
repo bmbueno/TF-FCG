@@ -23,6 +23,7 @@ uniform mat4 projection;
 #define FLOOR 1
 #define TABLE 2
 #define CARROT 3
+#define COW 4
 
 // Constantes
 #define M_PI   3.14159265358979323846
@@ -75,56 +76,32 @@ void main()
     // Vetor que define o sentido da câmera em relação ao ponto atual.
     vec4 v = normalize(camera_position - p);
 
+    // Vetor que define o sentido da reflexão especular ideal.
+    vec4 r = -l+2*n*dot(n,l);
+
     // Coordenadas de textura U e V
     float U = 0.0;
     float V = 0.0;
 
+    vec3 Kd; // Refletância difusa
+    vec3 Ks; // Refletância especular
+    vec3 Ka; // Refletância ambiente
+    float q;
 
     if ( object_id == FLOOR )
     {
-        // PREENCHA AQUI as coordenadas de textura da esfera, computadas com
-        // projeção esférica EM COORDENADAS DO MODELO. Utilize como referência
-        // o slides 134-150 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // A esfera que define a projeção deve estar centrada na posição
-        // "bbox_center" definida abaixo.
-
-        // Você deve utilizar:
-        //   função 'length( )' : comprimento Euclidiano de um vetor
-        //   função 'atan( , )' : arcotangente. Veja https://en.wikipedia.org/wiki/Atan2.
-        //   função 'asin( )'   : seno inverso.
-        //   constante M_PI
-        //   variável position_model
-
-        // vec4 bbox_center = (bbox_min + bbox_max) / 2.0;
-        // float rho, teta, phi;
-
-        // p = position_model - bbox_center;
-
-        // rho = length(p);
-        // teta = atan(p.x,p.z);
-        // phi = asin(p.y/rho);
-
-        // U = (teta + M_PI) / (2 * M_PI);
-        // V = (phi + M_PI_2)/ (M_PI);
-
-    // Coordenadas de textura do plano, obtidas do arquivo OBJ.
         U = texcoords.x - floor(texcoords.x);
         V = texcoords.y  - floor(texcoords.y);
 
         Kd0 = texture(TextureImage1, vec2(U,V)).rgb;
 
+        float lambert = max(0,dot(n,l));
+
+        color = Kd0 * (lambert + 0.01);
+
     }
     else if ( object_id == BUNNY )
     {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
-
         float minx = bbox_min.x;
         float maxx = bbox_max.x;
 
@@ -137,24 +114,43 @@ void main()
         U = (position_model.x - minx)/(maxx - minx);
         V = (position_model.y - miny)/(maxy - miny);
 
+
+        // Modelo de iluminacao Blinn-Phong
+        Kd = vec3(0.08,0.4,0.8);
+        Ks = vec3(0.8,0.8,0.8);
+        Ka = vec3(0.04,0.2,0.4);
+        q = 32.0;
+
+        vec3 I = vec3(1.0,1.0,1.0);
+        vec3 Ia = vec3(0.2,0.2,0.2);
+        vec3 lambert_diffuse_term = Kd*I*max(0,dot(n,l));
+        vec3 ambient_term = Ka*Ia;
+        vec3 phong_specular_term  =  Ks*I*pow(max(0,dot(r,v)),q);
+        color = lambert_diffuse_term + ambient_term + phong_specular_term;
+
+    } else if ( object_id == COW)
+    {
+        float minx = bbox_min.x;
+        float maxx = bbox_max.x;
+
+        float miny = bbox_min.y;
+        float maxy = bbox_max.y;
+
+        float minz = bbox_min.z;
+        float maxz = bbox_max.z;
+
+        // Modelo de iluminacao Lambert
+        U = (position_model.x - minx)/(maxx - minx);
+        V = (position_model.z - minz)/(maxz - minz);
+
         Kd0 = texture(TextureImage0, vec2(U,V)).rgb;
 
-    } else if ( object_id == TABLE )
-    {
-        U = position_model.x;
-        V = position_model.z;
+        float lambert = max(0,dot(n,l));
 
-        Kd0 = texture(TextureImage4, vec2(U,V)).rgb;
+        color = Kd0 * (lambert + 0.01);
+
     } else if ( object_id == CARROT )
     {
-        // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
-        // projeção planar XY em COORDENADAS DO MODELO. Utilize como referência
-        // o slides 99-104 do documento Aula_20_Mapeamento_de_Texturas.pdf,
-        // e também use as variáveis min*/max* definidas abaixo para normalizar
-        // as coordenadas de textura U e V dentro do intervalo [0,1]. Para
-        // tanto, veja por exemplo o mapeamento da variável 'p_v' utilizando
-        // 'h' no slides 158-160 do documento Aula_20_Mapeamento_de_Texturas.pdf.
-        // Veja também a Questão 4 do Questionário 4 no Moodle.
 
         float minx = bbox_min.x;
         float maxx = bbox_max.x;
@@ -165,30 +161,20 @@ void main()
         float minz = bbox_min.z;
         float maxz = bbox_max.z;
 
+
+        // Modelo de iluminacao Lambert
         U = (position_model.x - minx)/(maxx - minx);
         V = (position_model.z - minz)/(maxz - minz);
 
         Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
 
+        float lambert = max(0,dot(n,l));
+
+        color = Kd0 * (lambert + 0.01);
+
     }
-    // else if ( object_id == PLANE )
-    // {
-    //     // Coordenadas de textura do plano, obtidas do arquivo OBJ.
-    //     U = texcoords.x - floor(texcoords.x);
-    //     V = texcoords.y  - floor(texcoords.y);
-
-    // }
-
-    // Obtemos a refletância difusa a partir da leitura da imagem TextureImage0
-    // Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
-
-    // Equação de Iluminação
-    float lambert = max(0,dot(n,l));
-
-    color = Kd0 * (lambert + 0.01);
 
     // Cor final com correção gamma, considerando monitor sRGB.
-    // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
     color = pow(color, vec3(1.0,1.0,1.0)/2.2);
 }
 
