@@ -582,23 +582,10 @@ void detectaColisao(const char *object_name)
 
         if (colisaox && colisaoz)
         {
-
             carrots.erase(carrot);
-            printf("comeu a cenoura\n");
+            break;
         }
     }
-
-    /*   printf("\n");
-    printf("\n------------------------------------------------\n");
-    bbox bunnyBox = getBBox("bunny");
-    bbox carrotBox = getBBox("carrot");
-
-
-    printf("%0.2f, %0.2f", g_VirtualScene["carrot"].bbox_min.x * 0.01f, g_VirtualScene["carrot"].bbox_max.x *0.01f);
-
-    printf("\n------------------------------------------------\n");
-
-*/
 }
 
 void DrawModelFloor()
