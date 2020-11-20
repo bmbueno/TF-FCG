@@ -55,6 +55,10 @@
 float deslocamento_x = 0.0f;
 float deslocamento_z = 0.0f;
 
+float cameraLivre_x = 0.0f;
+float cameraLivre_z = 0.0f;
+
+
 // Estrutura que representa um modelo geométrico carregado a partir de um
 // arquivo ".obj". Veja https://en.wikipedia.org/wiki/Wavefront_.obj_file .
 struct ObjModel
@@ -143,6 +147,9 @@ void DrawAllCarrots(int num);
 std::list<objectCoordinates> carrots;
 bool detectaUmaColisao(objectCoordinates object1, objectCoordinates object2, const char *object1_name, const char *object2_name);
 void endGameScene();
+bool cameraLivre = false;
+float look_at_x = 0.0f;
+float look_at_y = 0.0f;
 
 // Definimos uma estrutura que armazenará dados necessários para renderizar
 // cada objeto da cena virtual.
@@ -188,7 +195,7 @@ bool g_MiddleMouseButtonPressed = false; // Análogo para botão do meio do mous
 // renderização.
 float g_CameraTheta = 0.0f;    // Ângulo no plano ZX em relação ao eixo Z
 float g_CameraPhi = 0.5f;      // Ângulo em relação ao eixo Y
-float g_CameraDistance = 5.0f; // Distância da câmera para a origem
+float g_CameraDistance = 8.0f; // Distância da câmera para a origem
 
 // Variáveis que controlam rotação do antebraço
 float g_ForearmAngleZ = 0.0f;
@@ -409,17 +416,22 @@ int main(int argc, char *argv[])
         float z = r * cos(g_CameraPhi) * cos(g_CameraTheta);
         float x = r * cos(g_CameraPhi) * sin(g_CameraTheta);
 
+
+
         // Abaixo definimos as varáveis que efetivamente definem a câmera virtual.
         // Veja slides 195-227 e 229-234 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::vec4 camera_position_c = glm::vec4(x, y, z, 1.0f);             // Ponto "c", centro da câmera
-        glm::vec4 camera_lookat_l = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);      // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+        glm::vec4 camera_lookat_l = glm::vec4(look_at_x, look_at_y, 0.0f, 1.0f);      // Ponto "l", para onde a câmera (look-at) estará sempre olhando
+
         glm::vec4 camera_view_vector = camera_lookat_l - camera_position_c; // Vetor "view", sentido para onde a câmera está virada
         glm::vec4 camera_up_vector = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);     // Vetor "up" fixado para apontar para o "céu" (eito Y global)
 
         // Computamos a matriz "View" utilizando os parâmetros da câmera para
         // definir o sistema de coordenadas da câmera.  Veja slides 2-14, 184-190 e 236-242 do documento Aula_08_Sistemas_de_Coordenadas.pdf.
         glm::mat4 view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector) * Matrix_Translate(-deslocamento_x, 0, -deslocamento_z);
-
+        if(cameraLivre){
+            view = Matrix_Camera_View(camera_position_c, camera_view_vector, camera_up_vector) * Matrix_Translate(-cameraLivre_x,0 ,-cameraLivre_z);
+        }
         // Agora computamos a matriz de Projeção.
         glm::mat4 projection;
 
@@ -574,7 +586,6 @@ bool isMovimentoValido(float deslocamentoX, float deslocamentoZ){
 
 void detectaColisao(const char *object_name)
 {
-    // printf("removendo\n");
     objectCoordinates bunny;
 
     bunny.x = deslocamento_x;
@@ -635,7 +646,7 @@ bool detectaUmaColisao(objectCoordinates object1, objectCoordinates object2, con
     if (colisaox && colisaoz)
     {
         return true;
-    } else 
+    } else
         return false;
 }
 
@@ -1271,22 +1282,27 @@ void CursorPosCallback(GLFWwindow *window, double xpos, double ypos)
         g_CameraTheta -= 0.01f * dx;
         g_CameraPhi += 0.01f * dy;
 
+        if(!cameraLivre){
         // Em coordenadas esféricas, o ângulo phi deve ficar entre -pi/2 e +pi/2.
-        float phimax = 3.141592f / 2;
-        float phimin = -phimax;
+        float phimax = 3.141592f / 8;
+        float phimin = 0;
 
         if (g_CameraPhi > phimax)
             g_CameraPhi = phimax;
 
         if (g_CameraPhi < phimin)
             g_CameraPhi = phimin;
+        }
+        if(cameraLivre){
+        // Atualizamos parâmetros da câmera com os deslocamentos
+        look_at_x   += 0.01f*dx;
+        look_at_y   -= 0.01f*dy;
+        }
 
         // Atualizamos as variáveis globais para armazenar a posição atual do
         // cursor como sendo a última posição conhecida do cursor.
         g_LastCursorPosX = xpos;
         g_LastCursorPosY = ypos;
-
-
 }
 
 // Função callback chamada sempre que o usuário movimenta a "rodinha" do mouse.
@@ -1327,27 +1343,61 @@ void KeyCallback(GLFWwindow *window, int key, int scancode, int action, int mod)
     int s_state = glfwGetKey(window, GLFW_KEY_S);
     int a_state = glfwGetKey(window, GLFW_KEY_A);
     int d_state = glfwGetKey(window, GLFW_KEY_D);
+    int l_state = glfwGetKey(window, GLFW_KEY_L);
 
     if (key == GLFW_KEY_W || w_state == GLFW_PRESS)
     {
-        if(isMovimentoValido(0, -0.1f))
+        if(cameraLivre){
+            cameraLivre_z -= 0.1;
+        }else if(isMovimentoValido(0, -0.1f)){
             deslocamento_z -= 0.1;
+        }
     }
     if (key == GLFW_KEY_S || s_state == GLFW_PRESS)
     {
-        if(isMovimentoValido(0, 0.1f))
+        if(cameraLivre){
+            cameraLivre_z += 0.1;
+        }else if(isMovimentoValido(0, 0.1f)){
             deslocamento_z += 0.1;
+        }
     }
     if (key == GLFW_KEY_A || a_state == GLFW_PRESS)
     {
-        if(isMovimentoValido(-0.1f,0 ))
+        if(cameraLivre){
+            cameraLivre_x -= 0.1;
+        }else if(isMovimentoValido(-0.1f,0 )){
             deslocamento_x -= 0.1;
+        }
     }
     if (key == GLFW_KEY_D || d_state == GLFW_PRESS)
     {
-        if(isMovimentoValido(0.1f, 0))
+        if(cameraLivre){
+            cameraLivre_x += 0.1;
+        }else if(isMovimentoValido(0.1f, 0)){
             deslocamento_x += 0.1;
+        }
     }
+
+    if(key == GLFW_KEY_L && l_state != GLFW_PRESS){
+
+        if(cameraLivre == false){
+            cameraLivre = true;
+            printf("camera livre true\n");
+        }
+        else{
+            cameraLivre = false;
+            printf("camera livre false\n");
+        }
+        look_at_x = 0.0f;
+        look_at_y = 0.0f;
+        g_CameraTheta = 0.0f;
+        g_CameraPhi = 0.0f;
+
+        cameraLivre_x = cameraLivre_z = 0.0f;
+    }
+
+
+
 }
 
 // Definimos o callback para impressão de erros da GLFW no terminal
