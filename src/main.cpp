@@ -526,7 +526,7 @@ void endGameScene()
 void DrawModelBunny()
 {
     glm::mat4 model = Matrix_Identity();
-    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(cos(g_CameraTheta));
+    model = Matrix_Translate(deslocamento_x, 0.0f, deslocamento_z) * Matrix_Rotate_Y(M_PI/-2);
     glUniformMatrix4fv(model_uniform, 1, GL_FALSE, glm::value_ptr(model));
     glUniform1i(object_id_uniform, BUNNY);
     DrawVirtualObject("bunny");
