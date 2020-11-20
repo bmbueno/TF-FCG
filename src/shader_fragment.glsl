@@ -40,6 +40,7 @@ uniform sampler2D TextureImage0;
 uniform sampler2D TextureImage1;
 uniform sampler2D TextureImage2;
 uniform sampler2D TextureImage3;
+uniform sampler2D TextureImage4;
 
 // O valor de saída ("out") de um Fragment Shader é a cor final do fragmento.
 out vec3 color;
@@ -143,7 +144,7 @@ void main()
         U = position_model.x;
         V = position_model.z;
 
-        Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
+        Kd0 = texture(TextureImage4, vec2(U,V)).rgb;
     } else if ( object_id == CARROT )
     {
         // PREENCHA AQUI as coordenadas de textura do coelho, computadas com
@@ -165,7 +166,7 @@ void main()
         float maxz = bbox_max.z;
 
         U = (position_model.x - minx)/(maxx - minx);
-        V = (position_model.y - miny)/(maxy - miny);
+        V = (position_model.z - minz)/(maxz - minz);
 
         Kd0 = texture(TextureImage2, vec2(U,V)).rgb;
 
@@ -189,5 +190,5 @@ void main()
     // Cor final com correção gamma, considerando monitor sRGB.
     // Veja https://en.wikipedia.org/w/index.php?title=Gamma_correction&oldid=751281772#Windows.2C_Mac.2C_sRGB_and_TV.2Fvideo_standard_gammas
     color = pow(color, vec3(1.0,1.0,1.0)/2.2);
-} 
+}
 
